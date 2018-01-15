@@ -2,4 +2,4 @@ Anonymized network traces (extended network flows) are available for download fr
 
 If you use the data for research, please use the following citacion in your paper:
 
-M. Lastovicka, T. Jirsik, S. Celeda, Pavel an Spacek, and D. Filakovsky, “Passive OS Fingerprinting Methods in the Jungle of Wireless Networks,”in Network Operations and Management Symposium (NOMS), 2018 IEEE
+M. Lastovicka, T. Jirsik, P. Celeda, S. Spacek, and D. Filakovsky, “Passive OS Fingerprinting Methods in the Jungle of Wireless Networks,” in Network Operations and Management Symposium (NOMS), 2018 IEEE
