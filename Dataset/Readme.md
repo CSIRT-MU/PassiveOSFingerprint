@@ -1,5 +1,5 @@
-Anonymized network traces (extended network flows) are available for download from our univerzity repozitory https://is.muni.cz/auth/repo/1402160/anonymized_flow.zip
+Anonymized network traces (extended network flows) are available for download from our univerzity repozitory https://is.muni.cz/repo/1402160/anonymized_flow.zip
 
 If you use the data for research, please use the following citacion in your paper:
 
-M. Lastovicka, T. Jirsik, S. Celeda, Pavel an Spacek, and D. Filakovsky, ìPassive OS Fingerprinting Methods in the Jungle of Wireless Networks,îin Network Operations and Management Symposium (NOMS), 2018 IEEE
+M. Lastovicka, T. Jirsik, S. Celeda, Pavel an Spacek, and D. Filakovsky, ‚ÄúPassive OS Fingerprinting Methods in the Jungle of Wireless Networks,‚Äùin Network Operations and Management Symposium (NOMS), 2018 IEEE
