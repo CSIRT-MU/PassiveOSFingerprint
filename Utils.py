@@ -1,8 +1,5 @@
 import re
 
-# MUNI net 147.251.0.0/16
-ip_reg = re.compile('147\.251\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)')
-time_reg = re.compile('(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})')
 major_minor_reg = re.compile('\d*\.\d*')
 
 # Windows
@@ -10,7 +7,6 @@ win_version = re.compile('(?<=windows)\d+\.\d+')
 win_reg1 = re.compile('update\.microsoft\.com')
 # DNS query
 win_reg2 = re.compile('download.windowsupdate.com')
-# maybe
 win_reg3 = re.compile('weather\.microsoft\.com')
 # IE connection
 win_reg4 = re.compile('client\.wns\.windows\.com')
@@ -79,15 +75,10 @@ linux_reg5 = re.compile('ntp\.ubuntu\.com')
 # maybe
 linux_reg6 = re.compile('ubuntu\.pool\.ntp\.org')
 
-
 # Android
-# connectivitycheck for android 5 or older
 android_reg1 = re.compile('connectivitycheck\.android\.com')
-# connectivitycheck for android 6 or newer
 android_reg2 = re.compile('connectivitycheck\.gstatic\.com')
-# DNS query for default NTP android 5 or older
 android_reg3 = re.compile('android\.pool\.ntp\.org')
-# DNS query for default NTP android 6 or newer
 android_reg4 = re.compile('api.sec.miui.com')
 android_reg5 = re.compile('android\.clients\.google\.com')
 android_reg6 = re.compile('clients3\.google\.com;;/generate_204')
@@ -101,7 +92,6 @@ android_reg13 = re.compile('ms.cmcm.com')
 android_reg14 = re.compile('cmdts.ksmobile.com')
 android_reg15 = re.compile('micloud.xiaomi.net')
 
-
 # Fedora
 fed_reg1 = re.compile('fedoraproject\.org;;/static/hotspot\.txt')
 
@@ -109,18 +99,9 @@ fed_reg1 = re.compile('fedoraproject\.org;;/static/hotspot\.txt')
 bb_reg1 = re.compile('icc\.blackberry\.com')
 bb_reg2 = re.compile('inet\.icrs\.blackberry\.com')
 
-
-# paths to files
-flow_path = '../anonymized_flow.csv'
-eduroam_path = ''
-session_path = ''
-session_final_path = '../anonymized_sessions.csv'
-finger_path = 'fingers_map.csv'
-dhcp_path = ''
-
 '''--------------------------------------------------METHODS--------------------------------------------------'''
 
-# return vendor from OS name
+
 def get_vendor(str):
     if 'Android' in str:
         return 'Google'
@@ -135,12 +116,11 @@ def get_vendor(str):
     return ''
 
 
-# return vendor with OS name
 def get_vendor_OS_name(str):
-    if 'Windows Phone' in str:
-        return 'Microsoft;Windows Phone'
     if 'Windows' in str:
         return 'Microsoft;Windows'
+    if 'Windows Phone' in str:
+        return 'Microsoft;Windows Phone'
 
     if 'Mac' in str:
         return 'Apple;Mac OS X'
@@ -188,37 +168,7 @@ def split_OS(OS, size):
     return result
 
 
-# merge same OS with/out version
-def merge_same_sub_os(source):
-    results = []
-    for record in source:
-        contains = False
-        for result in results:
-            if record in result:
-                contains = True
-            if result in record:
-                results.remove(result)
-        if not contains:
-            results.append(record)
-    return results
-
-
-# get first and last seen from flow as array
-def get_time(str):
-    return time_reg.findall(str)
-
-
-# get src ip from flow record
-def get_ip(str):
-    return ip_reg.search(str).group(0)
-
-
-# get src and dst ip as array
-def get_all_ip(str):
-    return ip_reg.findall(str)
-
-
-# check if flow was during session
+# check if traffic was during session
 def is_between(traffic_time, session_time):
     return traffic_time[0] >= session_time[0] and traffic_time[1] <= session_time[1]
 
@@ -230,52 +180,11 @@ def get_id(session_line):
 
 '''-------------------------------------------------------DICTIONARY------------------------------------------------'''
 
-
-# create dictionary from DHCP log by session id
-# usage: dict[session_id] return MAC address
-def create_session_id_to_mac_dict():
-    with open(session_final_path, 'r') as session:
-        result = {}
-        session.readline()
-        for line in session:
-            array = line.split(';')
-            result[array[0]] = array[17]
-        return result
-
-
-# create dictionary from eduroam log by IP address
-# usage: dict[IP] return list of sessions with same IP address
-def create_eduroam_dict():
-    with open(eduroam_path, 'r') as eduroam:
-        eduroam.readline()
-        result = {}
-        for record in eduroam:
-            if get_ip(record) not in result:
-                result[get_ip(record)] = [[get_id(record), get_time(record)]]
-            else:
-                result[get_ip(record)].append([get_id(record), get_time(record)])
-    return result
-
-
-# create dictionary from session file by IP address
-# usage : dict[ip_address] return list of sessions with same IP
-def create_session_dict_by_id_OS():
-    # path to eduroam session file
-    with open(session_final_path, 'r') as sessions:
-        # ignore first line
-        sessions.readline()
-        dict = {}
-        for session in sessions:
-            record = session.split(';')[:-1]
-            dict[record[0]] = record[16]
-        return dict
-
-
 # create dictionary from session file by IP address
 # usage : dict[ip_address] return list of sessions with same IP
 def create_session_dict_by_ip():
     # path to eduroam session file
-    with open(session_final_path, 'r') as sessions:
+    with open(session_path, 'r') as sessions:
         # ignore first line
         sessions.readline()
         dict = {}
@@ -290,21 +199,19 @@ def create_session_dict_by_ip():
 
 # create dictionary from session file by IP address
 # usage : dict[id] return current session with same ID
-def create_session_dict_by_id():
-    # path to eduroam session file
+def create_session_dict_by_id(session_path):
     with open(session_path, 'r') as sessions:
         # ignore first line
         sessions.readline()
         dict = {}
         for session in sessions:
-            dict[get_id(session)] = session.split(';')[:-1]
+            dict[get_id(session)] = session.split(';')[:4]
         return dict
 
 
 # create dictionary from TCP stack
 # usage : dict[SYN][WIN][TTL] return array with OS and their %
-def create_fingers_dict():
-    # path to eduroam session file
+def create_fingers_dict(finger_path ):
     with open(finger_path, 'r') as fingers:
         # ignore first line
         fingers.readline()
@@ -327,10 +234,8 @@ def create_fingers_dict():
         return result
 
 
-# create dictionary from TCP stac by ID
 # usage : dict[id] return array with OS and their %
-def create_fingers_dict_id():
-    # path to eduroam session file
+def create_fingers_dict_id(finger_path):
     with open(finger_path, 'r') as fingers:
         # ignore first line
         fingers.readline()
@@ -353,7 +258,6 @@ def create_fingers_dict_id():
         return result
 
 
-# return most valuable element from dictionary
 def return_MVP_element(dic):
     max = 0
     element = ''
@@ -363,11 +267,9 @@ def return_MVP_element(dic):
             element = tmp
     return element
 
-
 '''------------------------------------CONNECT FLOW WITH OS BY DNS AND UPDATES SERVERS------------------------------'''
 
 
-# return true if hostname or DNS query is specific for Windows
 def is_win(record):
     return win_reg1.search(record) or win_reg2.search(record) or win_reg3.search(record) \
            or win_reg4.search(record) or win_reg5.search(record) or win_reg6.search(record) \
@@ -380,7 +282,6 @@ def is_win(record):
            or win_reg25.search(record) or win_reg26.search(record) or win_reg27.search(record) \
            or win_reg28.search(record) or win_reg29.search(record) or win_reg30.search(record) \
            or win_reg31.search(record) or win_reg32.search(record) or win_reg33.search(record)
-
 
 def is_mac(record):
     return mac_reg1.search(record) or mac_reg2.search(record) or mac_reg3.search(record) \
@@ -412,7 +313,12 @@ def is_blackberry(record):
     return bb_reg1.search(record) or bb_reg2.search(record)
 
 
-# return OS if is specific domain, empty string otherwise
+def get_win_version(record):
+    if win_version.search(record):
+        return win_version.search(record).group(0) + ' '
+    return ''
+
+
 def check_os(record):
     if is_win(record):
         return 'Windows'
@@ -431,8 +337,8 @@ def check_os(record):
 '''----------------------------------TCP STACK-------------------------------------'''
 
 
-# get most valuable OS with version and percents from flow record by TCP stack
-def calc_os_from_tcp_group(record, raw):
+# get one OS with version and percents from flow record by TCP stack
+def calc_os_from_tcp_group(record, raw, fingers_dict_id):
     OS = {}
     total = 0
     for tmp in record.values():
@@ -456,16 +362,29 @@ def calc_os_from_tcp_group(record, raw):
     return result
 
 
-# parser for percents
 def get_number(line):
     return line.split(';')[6][:-2]
 
 
+# prepare file for finger_dict calc size of one group
+def calc_one_group(group):
+    counter = 0
+    for record in group:
+        counter += int(get_number(record))
+    return counter
+
 '''--------------------------------RESULTS--------------------------------------------'''
+# remove % from record
+def remove_UA(array):
+    result = ''
+    array = array.split(' ')[:-1]
+    for tmp in array:
+        result += tmp + ' '
+    return result
 
 
 # win_version : name
-win_map = {'Windows 10.0': 'Windows 10',
+win_map ={'Windows 10.0': 'Windows 10',
             'Windows 6.3': 'Windows 8.1',
             'Windows 6.2': 'Windows 8',
             'Windows 6.1': 'Windows 7',
@@ -475,15 +394,13 @@ win_map = {'Windows 10.0': 'Windows 10',
             'Windows 5.0': 'Windows 2000'}
 
 
-# convert release version to editions
 def convert_win_version(os):
     if os in win_map:
         return win_map[os]
     return os
 
 
-# calc final OS from UA, TCP and specific domains
-def final_os(data):
+def final_os(data, fingers_dict_id):
     if len(data) != 3:
         return ''
     ua = None
@@ -506,14 +423,11 @@ def final_os(data):
     result = {}
 
     # add tcp percents
-    if tcp is not None:
-        result = calc_os_from_tcp_group(tcp, True)
-        # for tmp in tcp:
-        #     result[tmp] = float(tcp[tmp])
-        #     total += float(tcp[tmp])
+    if tcp != None:
+        result = calc_os_from_tcp_group(tcp, True, fingers_dict_id)
 
     # add ua percents:
-    if ua is not None:
+    if ua != None:
         ua_size = 0
         for tmp in ua:
             ua_size += ua[tmp]
@@ -525,7 +439,7 @@ def final_os(data):
                 result[name] = float(100*ua[tmp]/ua_size)
 
     # add DNS percents:
-    if dns is not None:
+    if dns != None:
         for OS in dns:
             if '.' not in OS and OS != '':
                 set = False
@@ -535,13 +449,12 @@ def final_os(data):
                         set = True
                 if not set:
                     result[OS] = float(100)/len(dns)
-    fin_os = ''
+    final_os = ''
     max = 0
     apple = 0
     darwin = 0
     iOS = 0
     Mac = 0
-
     for OS in result:
         if 'Darwin' in OS:
             apple += result[OS]
@@ -553,55 +466,19 @@ def final_os(data):
             apple += result[OS]
             Mac += result[OS]
         if result[OS] > max:
-            fin_os = OS
+            final_os = OS
             max = result[OS]
 
-    if 'Darwin' in fin_os or 'iOS' in fin_os or 'Mac' in fin_os:
-        return fin_os
+    if 'Darwin' in final_os or 'iOS' in final_os or 'Mac' in final_os :
+        return final_os
 
-    # merge apple's products
     if apple > (max * 5):
         if Mac >= darwin and Mac >= iOS:
             return 'Mac OS X'
         if iOS >= darwin:
             return 'iOS'
         return 'Darwin'
-    return fin_os
-
-
-# return final OS without version
-def result_only_host_OS(data):
-    mac = 0
-    win = 0
-    linux = 0
-    android = 0
-    for tmp in data:
-        for record in tmp.split(' '):
-            OS = delete_major_minor(record)
-            if OS is None:
-                continue
-            if OS == 'Mac':
-                mac += 1
-            if OS == 'Windows':
-                win += 1
-            if OS == 'Linux':
-                linux += 1
-            if OS == 'Android':
-                android += 1
-
-    sum = mac + win + linux + android
-    if sum == 0:
-        return ''
-    if mac >= win and mac >= linux and mac >= android:
-        return ' ' + repr(100*mac/sum) + ' %'
-    if win >= mac and win >= linux and win >= android:
-        return ' ' + repr(100*win/sum) + ' %'
-    if linux >= win and mac <= linux and linux >= android:
-        return ' ' + repr(100*linux/sum) + ' %'
-    if android >= win and android >= linux and mac <= android:
-        return ' ' + repr(100*android/sum) + ' %'
-
-    return ''
+    return final_os
 
 
 # remove version from OS
@@ -615,92 +492,3 @@ def delete_major_minor(record):
     if 'Android' in record:
         return 'Android'
     return None
-
-
-'''--------------------------------------------------DHCP------------------------------------------------------'''
-
-
-# N/A for desktop
-#  '' for devices without name
-def get_OS_from_device_name(line):
-    if 'MacBook' in line or 'macbook' in line:
-        return 'Mac OS X'
-    if 'iPhone' in line or 'Iphone' in line or 'iPad' in line or 'iPod' in line:
-        return 'iOS'
-    if 'Windows-phone' in line or 'windows-phone' in line:
-        return 'Windows Phone'
-    if 'windows' in line or 'Windows' in line:
-        return 'Windows'
-    if ('pc' not in line and 'PC' not in line) and ('android' in line or 'Android' in line or 'samsung' in line or 'Samsung' in line or 'Galaxy' in line or 'HUAWEI' in line or 'Honor' in line or 'honor' in line or 'Xiaomi' in line or 'Redmi' in line):
-        return 'Android'
-    if 'BLACKBERRY' in line:
-        return 'BlackBerry'
-    return ''
-
-hwaddr_reg = re.compile('(?:[0-9a-f]{2}:){5}[0-9a-f]{2}')
-hwaddr_time_reg = re.compile('\d \d\d:\d\d:\d\d')
-hwaddr_name_reg = re.compile('\(.*\)')
-
-
-# return mac address from string
-def get_mac(string):
-    return hwaddr_reg.search(string).group(0)
-
-
-def get_dhcp_time(string):
-    if "Apr 30 " in string:
-        return ''
-    return '2017-05-0' + hwaddr_time_reg.search(string).group(0)
-
-
-def create_DHCP_dict():
-    with open(dhcp_path, 'r') as dhcp:
-        result = {}
-        for line in dhcp:
-            OS = get_OS_from_device_name(line)
-            time = get_dhcp_time(line)
-            if time != '':
-                name = ''
-                if hwaddr_name_reg.search(line):
-                    name = hwaddr_name_reg.search(line).group(0)
-                # time = (datetime.datetime.strptime(time, "%Y-%m-%d %H:%M:%S") + datetime.timedelta(seconds=5)).strftime("%Y-%m-%d %H:%M:%S")
-                ip = get_ip(line)
-                # if len(get_all_ip(line)) == 2:
-                #     ip2 = get_all_ip(line)[1]
-                # else:
-                #     ip2 = ''
-                mac = get_mac(line)
-                if ip not in result:
-                    result[ip] = {}
-                    result[ip] = [[time, time, OS, mac, name]]
-                elif result[ip][-1][3] != mac or result[ip][-1][2] != OS:
-                        result[ip].append([time, time, OS, mac, name])
-                # elif result[ip][-1][2] == '' and OS != '':
-                #     result[ip][-1] = [result[ip][-1][0], time, OS, mac, ip2]
-                else:
-                    result[ip][-1] = [result[ip][-1][0], time, result[ip][-1][2], mac, name]
-        return result
-
-
-def load_DHCP_dict():
-    with open(dhcp_path, 'r') as dhcp:
-        result = {}
-        for line in dhcp:
-            array = line.split(';')[:-1]
-            if array[0] not in result:
-                result[array[0]] = {}
-                result[array[0]] = [array[1:]]
-            else:
-                result[array[0]].append(array[1:])
-        return result
-
-
-'''-----------------------------------------------GLOBAL variables -------------------------------------------------'''
-dhcp_dict = load_DHCP_dict()
-fingers_dict = create_fingers_dict()
-sessions_dict = create_session_dict_by_ip()
-sessions_dict_with_os = create_session_dict_by_id_OS()
-sessions_dict_id = create_session_dict_by_id()
-fingers_dict_id = create_fingers_dict_id()
-eduroam_dict = create_eduroam_dict()
-mac_dict = create_session_id_to_mac_dict()
