@@ -1,7 +1,7 @@
 # Passive OS Fingerprint
 
 # Acknowledgement
-This repository is an attachement to the paper "Passive OS Fingerprint Prototype Demonstration" presented at NOMS 2018 conference.
+This repository is an attachement to the paper "Passive OS Fingerprint Prototype Demonstration" submitted for the NOMS 2018 conference demonstration session.
 
 M. Lastovicka, and D. Filakovsky, “Passive OS Fingerprint Prototype Demonstration” in Network Operations and Management Symposium (NOMS), 2018 IEEE
 
